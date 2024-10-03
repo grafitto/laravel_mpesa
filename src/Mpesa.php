@@ -259,22 +259,35 @@ class Mpesa
     }
 
     /**
+     * Sets consumer key and secret key
+     * @param string $consumer_key Consumer key provided by Safaricom
+     * @param string $secret_key Secret key provided by Safaricom
+     * @return null
+     */
+    public function setKeys($consumer_key, $secret_key) {
+        $this->consumer_key = $consumer_key;
+        $this->secret_key = $secret_key;
+    }
+
+    /**
      * Client to Business
      *
      * This method is used to register URLs for callbacks when money is sent from the MPesa toolkit menu
      *
-     * @param string $confirmURL The local URL that MPesa calls to confirm a payment
-     * @param string $ValidationURL The local URL that MPesa calls to validate a payment
+     * @param string $shortCode A safaricom paybill
+     * @param array  ['confirmationURL' => $confirmURL, 'validationURL' => $validationURL] The local URL that MPesa calls to confirm a payment
      * @return object Curl Response from submit_request, FALSE on failure
      */
 
-    public function c2bRegisterUrls()
+    public function c2bRegisterUrls($shortCode = null, $urls = [])
     {
+        $shortCode = $shortCode ?? $this->paybill;
+        $urls = count($urls) == 0 ? [ 'confirmationURL' => $this->cbconfirm, 'validationURL' => $this->cbvalidate]  : $urls;
         $request_data = array(
-            'ShortCode' => $this->paybill,
+            'ShortCode' => $shortCode,
             'ResponseType' => 'Completed',
-            'ConfirmationURL' => $this->cbconfirm,
-            'ValidationURL' => $this->cbvalidate
+            'ConfirmationURL' => $urls['confirmationURL'],
+            'ValidationURL' => $urls['validationURL']
         );
         $data = json_encode($request_data);
         //header('Content-Type: application/json');
@@ -293,10 +306,11 @@ class Mpesa
      * @param int $amount The amount to send to Paybill number
      * @param int $msisdn A dummy Safaricom phone number to simulate transaction in the format 2547xxxxxxxx
      * @param string $ref A reference name for the transaction
+     * @param string $shortCode A safaricom paybill
      * @return object Curl Response from submit_request, FALSE on failure
      */
 
-    public function simulateC2B($amount, $msisdn, $ref)
+    public function simulateC2B($amount, $msisdn, $ref, $shortCode)
     {
         $data = array(
             'ShortCode' => $this->paybill,
